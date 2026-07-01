@@ -1,9 +1,745 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta http-equiv="refresh" content="0; url=./extempore_coach.html" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Extempore AI Coach</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#FAF8F4;
+    --panel:#FFFFFF;
+    --panel-2:#F2EFE7;
+    --line:#E4DFD3;
+    --spot:#C9791F;
+    --spot-bg:#FBEAD4;
+    --good:#3F8C4C;
+    --good-bg:#E7F4E5;
+    --warn:#B9740F;
+    --warn-bg:#FCEFD9;
+    --bad:#C0463C;
+    --bad-bg:#FBE7E4;
+    --text:#262220;
+    --text-dim:#7A7268;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    padding:48px 20px 80px;
+  }
+  .wrap{max-width:760px;margin:0 auto;}
+
+  .eyebrow{
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--spot);font-weight:600;margin:0 0 8px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:38px;
+    line-height:1.1;
+    margin:0 0 10px;
+  }
+  .sub{color:var(--text-dim);font-size:15px;line-height:1.6;margin:0 0 36px;max-width:520px;}
+
+  .page{display:none;}
+  .page.active{display:block;}
+
+  .progress{display:flex;gap:8px;margin-bottom:32px;}
+  .progress .step{
+    flex:1;height:4px;border-radius:2px;background:var(--line);
+  }
+  .progress .step.done{background:var(--spot);}
+
+  .stage{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:32px;
+    position:relative;
+    box-shadow:0 1px 2px rgba(38,34,32,0.04);
+  }
+
+  /* ---- Page 1: topic ---- */
+  .topic-card{
+    background:var(--spot-bg);
+    border-radius:14px;
+    padding:36px 30px;
+    text-align:center;
+    margin-bottom:28px;
+  }
+  .topic-card .label{font-size:12px;color:var(--spot);text-transform:uppercase;letter-spacing:.1em;margin:0 0 14px;font-weight:600;}
+  #topicText{
+    font-family:'Fraunces', serif;font-size:25px;line-height:1.35;margin:0;color:var(--text);
+  }
+  .btn-row{display:flex;gap:12px;flex-wrap:wrap;}
+  button{
+    font-family:'Inter',sans-serif;
+    font-size:14px;font-weight:500;
+    border-radius:10px;
+    padding:13px 22px;
+    cursor:pointer;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--text);
+  }
+  button:hover{border-color:var(--spot);color:var(--spot);}
+  button.primary{
+    background:var(--spot);border-color:var(--spot);color:#fff;
+  }
+  button.primary:hover{opacity:.92;color:#fff;}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  button:disabled:hover{border-color:var(--line);color:var(--text);}
+
+  .tips{margin-top:28px;padding-top:24px;border-top:1px solid var(--line);}
+  .tips .section-label{margin:0 0 12px;}
+  .tips ul{margin:0;padding-left:18px;color:var(--text-dim);font-size:14px;line-height:1.8;}
+
+  /* ---- Page 2: recording ---- */
+  .rec-topic{
+    background:var(--panel-2);border-radius:10px;padding:14px 18px;
+    font-size:14px;color:var(--text-dim);margin-bottom:28px;
+  }
+  .rec-topic span{color:var(--text);font-weight:500;}
+
+  .controls{
+    display:flex;align-items:center;gap:18px;margin:8px 0 28px;
+  }
+  .rec-btn{
+    width:68px;height:68px;border-radius:50%;
+    border:2px solid var(--spot);
+    background:#fff;
+    cursor:pointer;
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    padding:0;
+  }
+  .rec-btn:hover{border-color:var(--spot);color:var(--text);}
+  .rec-btn .dot{width:22px;height:22px;border-radius:50%;background:var(--spot);transition:border-radius .2s;}
+  .rec-btn.recording .dot{border-radius:5px;width:18px;height:18px;background:var(--bad);}
+  .rec-btn.recording{border-color:var(--bad);animation:pulse 1.4s infinite;}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(192,70,60,.30);}
+    70%{box-shadow:0 0 0 14px rgba(192,70,60,0);}
+    100%{box-shadow:0 0 0 0 rgba(192,70,60,0);}
+  }
+  .timer{font-family:'Fraunces',serif;font-size:32px;font-variant-numeric:tabular-nums;min-width:90px;}
+  .status{color:var(--text-dim);font-size:13px;margin-top:2px;}
+
+  .transcript-box{
+    background:var(--panel-2);border:1px solid var(--line);
+    border-radius:10px;padding:16px 18px;min-height:120px;max-height:240px;overflow-y:auto;
+    font-size:14px;line-height:1.7;color:var(--text-dim);
+    margin-bottom:24px;
+  }
+  .transcript-box .filler{color:var(--bad);font-weight:500;}
+  .transcript-box.empty::before{content:'Your transcript appears here as you speak…';}
+
+  .unsupported{
+    background:var(--bad-bg);border:1px solid var(--bad);border-radius:10px;
+    padding:16px;font-size:14px;color:var(--bad);margin-top:20px;
+  }
+
+  /* ---- Page 3: report ---- */
+  .score-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px;}
+  .score-card{
+    flex:1;min-width:140px;
+    background:var(--panel-2);border-radius:12px;
+    padding:16px 18px;
+  }
+  .score-card .label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin:0 0 6px;}
+  .score-card .val{font-family:'Fraunces',serif;font-size:25px;margin:0;}
+  .score-card .hint{font-size:12px;margin-top:5px;display:inline-block;padding:3px 9px;border-radius:20px;font-weight:500;}
+  .tag-good{color:var(--good);background:var(--good-bg);}
+  .tag-warn{color:var(--warn);background:var(--warn-bg);}
+  .tag-bad{color:var(--bad);background:var(--bad-bg);}
+
+  .confidence-wrap{
+    background:var(--spot-bg);border-radius:12px;
+    padding:22px 24px;margin-bottom:20px;
+  }
+  .confidence-wrap .label{font-size:12px;color:var(--spot);text-transform:uppercase;letter-spacing:.08em;margin:0 0 10px;font-weight:600;}
+  .conf-bar-bg{height:10px;background:rgba(201,121,31,0.18);border-radius:5px;overflow:hidden;}
+  .conf-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--bad),var(--warn),var(--good));width:0%;transition:width .8s ease;}
+  .conf-num{font-family:'Fraunces',serif;font-size:32px;margin:10px 0 0;color:var(--text);}
+
+  .feedback-list{list-style:none;margin:0 0 28px;padding:0;display:flex;flex-direction:column;gap:10px;}
+  .feedback-list li{
+    background:var(--panel-2);border-radius:10px;
+    padding:13px 16px;font-size:14px;line-height:1.55;display:flex;gap:10px;
+  }
+  .feedback-list li .bullet{flex-shrink:0;width:8px;height:8px;border-radius:50%;margin-top:7px;}
+
+  .transcript-final{
+    background:var(--panel-2);border-radius:10px;padding:16px 18px;
+    font-size:14px;line-height:1.7;color:var(--text-dim);margin-bottom:8px;
+  }
+  .transcript-final .filler{color:var(--bad);font-weight:500;}
+
+  .section-label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.1em;margin:28px 0 12px;}
+  .section-label:first-child{margin-top:0;}
+
+  @media (max-width:600px){
+    h1{font-size:28px;}
+    .stage{padding:22px;}
+  }
+</style>
 </head>
 <body>
-  <p>Redirecting... <a href="./extempore_coach.html">Click here if not redirected</a></p>
+<div class="wrap">
+  <p class="eyebrow">Personal extempore trainer</p>
+  <h1>Extempore AI Coach</h1>
+  <p class="sub">Get a random topic, speak for 60–90 seconds, and get instant feedback on filler words, pace, pauses and confidence — built for placement prep.</p>
+
+  <div class="progress">
+    <div class="step done" id="step1"></div>
+    <div class="step" id="step2"></div>
+    <div class="step" id="step3"></div>
+  </div>
+
+  <!-- PAGE 1: TOPIC -->
+  <div class="page active" id="page-topic">
+    <div class="stage">
+      <div class="topic-card">
+        <p class="label">Today's topic</p>
+        <p id="topicText">Tap "New topic" to begin</p>
+      </div>
+      <div class="btn-row">
+        <button id="newTopicBtn">New topic</button>
+        <button class="primary" id="goToRecordBtn">Start speaking →</button>
+      </div>
+      <div class="tips">
+        <p class="section-label">Before you start</p>
+        <ul>
+          <li>Take 10 seconds to plan a quick structure: intro, 2 points, conclusion.</li>
+          <li>Aim to speak for 60–90 seconds.</li>
+          <li>Use Chrome or Edge on desktop for live transcription.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2: RECORDING -->
+  <div class="page" id="page-record">
+    <div class="stage">
+      <div class="rec-topic">Topic: <span id="recTopicText"></span></div>
+
+      <div class="controls">
+        <button class="rec-btn" id="recBtn" aria-label="Start recording">
+          <div class="dot"></div>
+        </button>
+        <div>
+          <div class="timer" id="timer">00:00</div>
+          <div class="status" id="status">Press the mic to start speaking</div>
+        </div>
+      </div>
+
+      <div id="debugLog" style="font-family:monospace;font-size:11px;color:var(--text-dim);background:var(--panel-2);border-radius:8px;padding:8px 12px;max-height:90px;overflow-y:auto;margin-bottom:18px;"></div>
+
+      <div class="transcript-box empty" id="transcript"></div>
+      <div id="unsupportedMsg" style="display:none;" class="unsupported">
+        Your browser doesn't support live speech recognition (Web Speech API). Try Chrome or Edge on desktop, or use the Python backend version for offline analysis.
+      </div>
+
+      <div class="btn-row" style="margin-top:24px;">
+        <button id="backToTopicBtn">← Back</button>
+        <button class="primary" id="viewReportBtn" disabled>View feedback →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 3: REPORT -->
+  <div class="page" id="page-report">
+    <div class="stage">
+      <div class="confidence-wrap">
+        <p class="label">Confidence score</p>
+        <div class="conf-num" id="confNum">—</div>
+        <div class="conf-bar-bg"><div class="conf-bar-fill" id="confBar"></div></div>
+      </div>
+
+      <div class="score-row">
+        <div class="score-card">
+          <p class="label">Speaking speed</p>
+          <p class="val" id="wpmVal">—</p>
+          <span class="hint" id="wpmHint"></span>
+        </div>
+        <div class="score-card">
+          <p class="label">Filler words</p>
+          <p class="val" id="fillerVal">—</p>
+          <span class="hint" id="fillerHint"></span>
+        </div>
+        <div class="score-card">
+          <p class="label">Pauses</p>
+          <p class="val" id="pauseVal">—</p>
+          <span class="hint" id="pauseHint"></span>
+        </div>
+      </div>
+
+      <p class="section-label">Feedback</p>
+      <ul class="feedback-list" id="feedbackList"></ul>
+
+      <p class="section-label">Full transcript</p>
+      <div class="transcript-final" id="finalTranscript"></div>
+
+      <div class="btn-row" style="margin-top:24px;">
+        <button id="tryAgainBtn">Try another topic</button>
+        <button class="primary" id="retrySameBtn">Retry same topic</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOPICS = [
+  "Should social media platforms be held responsible for misinformation?",
+  "Is artificial intelligence a threat to job security?",
+  "The role of failure in personal growth",
+  "Should college education be free for everyone?",
+  "Is work-from-home better than office culture?",
+  "The impact of cricket on Indian youth culture",
+  "Should exams be the only measure of a student's ability?",
+  "Is social media doing more harm than good?",
+  "The importance of soft skills in the workplace",
+  "Should there be a four-day work week?",
+  "Is online learning as effective as classroom learning?",
+  "The ethics of using AI in hiring decisions",
+  "Should plastic be banned completely in India?",
+  "Is competition healthy for students?",
+  "The future of electric vehicles in India",
+  "Should government make voting mandatory?",
+  "Is space exploration worth the cost?",
+  "The effect of smartphones on family relationships",
+  "Should startups prioritize growth over profitability?",
+  "Is traditional banking becoming obsolete?",
+  "The pros and cons of a cashless economy",
+  "Should homework be abolished in schools?",
+  "Is climate change reversible with current technology?",
+  "The role of mentorship in career success",
+  "Should companies allow employees to work from anywhere?"
+];
+
+const FILLERS = ["um","uh","umm","uhh","like","you know","basically","actually","so","i mean","kind of","sort of","literally","right","okay so"];
+const PAUSE_THRESHOLD_MS = 1800;
+
+let currentTopic = "";
+let recognition = null;
+let recognizing = false;
+let startTime = null;
+let timerInterval = null;
+let fullTranscript = "";
+let lastResultTime = null;
+let pauseGaps = [];
+let hasRecordedOnce = false;
+
+// ---------- navigation ----------
+const pages = {
+  topic: document.getElementById('page-topic'),
+  record: document.getElementById('page-record'),
+  report: document.getElementById('page-report'),
+};
+const steps = {
+  topic: document.getElementById('step1'),
+  record: document.getElementById('step2'),
+  report: document.getElementById('step3'),
+};
+
+function goTo(pageName){
+  Object.values(pages).forEach(p => p.classList.remove('active'));
+  pages[pageName].classList.add('active');
+
+  const order = ['topic','record','report'];
+  const idx = order.indexOf(pageName);
+  order.forEach((name, i) => {
+    steps[name].classList.toggle('done', i <= idx);
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ---------- page 1: topic ----------
+const topicText = document.getElementById('topicText');
+const recTopicText = document.getElementById('recTopicText');
+
+function pickTopic(){
+  currentTopic = TOPICS[Math.floor(Math.random()*TOPICS.length)];
+  topicText.textContent = currentTopic;
+}
+document.getElementById('newTopicBtn').addEventListener('click', pickTopic);
+
+document.getElementById('goToRecordBtn').addEventListener('click', () => {
+  if(!currentTopic) pickTopic();
+  recTopicText.textContent = currentTopic;
+  resetRecordingState();
+  goTo('record');
+});
+
+// ---------- page 2: recording ----------
+const recBtn = document.getElementById('recBtn');
+const timerEl = document.getElementById('timer');
+const statusEl = document.getElementById('status');
+const debugLog = document.getElementById('debugLog');
+function log(msg){
+  const t = new Date().toLocaleTimeString();
+  debugLog.innerHTML += `<div>[${t}] ${msg}</div>`;
+  debugLog.scrollTop = debugLog.scrollHeight;
+}
+const transcriptEl = document.getElementById('transcript');
+const unsupportedMsg = document.getElementById('unsupportedMsg');
+const viewReportBtn = document.getElementById('viewReportBtn');
+
+document.getElementById('backToTopicBtn').addEventListener('click', () => {
+  if(recognizing) stopRecognitionOnly();
+  goTo('topic');
+});
+
+function resetRecordingState(){
+  fullTranscript = "";
+  pauseGaps = [];
+  lastResultTime = null;
+  hasRecordedOnce = false;
+  transcriptEl.innerHTML = "";
+  transcriptEl.classList.add('empty');
+  timerEl.textContent = "00:00";
+  statusEl.textContent = "Press the mic to start speaking";
+  recBtn.classList.remove('recording');
+  viewReportBtn.disabled = true;
+}
+
+function formatTime(ms){
+  const totalSec = Math.floor(ms/1000);
+  const m = String(Math.floor(totalSec/60)).padStart(2,'0');
+  const s = String(totalSec%60).padStart(2,'0');
+  return `${m}:${s}`;
+}
+
+function highlightFillers(text){
+  let escaped = text;
+  [...FILLERS].sort((a,b)=>b.length-a.length).forEach(f=>{
+    const re = new RegExp(`\\b${f.replace(' ','\\s+')}\\b`, 'gi');
+    escaped = escaped.replace(re, m => `<span class="filler">${m}</span>`);
+  });
+  return escaped;
+}
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const isSecureContext = window.isSecureContext === true;
+
+if(!SpeechRecognition){
+  unsupportedMsg.style.display = 'block';
+  unsupportedMsg.textContent = "Your browser doesn't support live speech recognition. Use Chrome or Edge on desktop.";
+  recBtn.disabled = true;
+} else if(!isSecureContext){
+  unsupportedMsg.style.display = 'block';
+  unsupportedMsg.textContent = "This page is running in an insecure context (likely opened as a local file). Microphone access requires https:// or http://localhost — host it on GitHub Pages or a local server, then reload.";
+  recBtn.disabled = true;
+} else {
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = (event) => {
+    log(`onresult fired, ${event.results.length} result(s)`);
+    let interim = "";
+    let finalChunk = "";
+    const now = Date.now();
+
+    if(lastResultTime !== null){
+      const gap = now - lastResultTime;
+      if(gap > PAUSE_THRESHOLD_MS) pauseGaps.push(gap);
+    }
+    lastResultTime = now;
+
+    for(let i = event.resultIndex; i < event.results.length; i++){
+      const piece = event.results[i][0].transcript;
+      if(event.results[i].isFinal) finalChunk += piece + " ";
+      else interim += piece;
+    }
+
+    if(finalChunk) fullTranscript += finalChunk;
+
+    transcriptEl.classList.remove('empty');
+    transcriptEl.innerHTML = highlightFillers(fullTranscript) + `<span style="opacity:.5">${interim}</span>`;
+    transcriptEl.scrollTop = transcriptEl.scrollHeight;
+  };
+
+  recognition.onstart = () => {
+    log('recognition.onstart fired');
+  };
+
+  recognition.onaudiostart = () => {
+    log('onaudiostart — mic stream connected');
+    statusEl.textContent = "Mic connected — listening for audio…";
+  };
+
+  recognition.onsoundstart = () => {
+    log('onsoundstart — sound detected');
+    statusEl.textContent = "Sound detected — analyzing…";
+  };
+
+  recognition.onspeechstart = () => {
+    log('onspeechstart — speech detected');
+    statusEl.textContent = "Hearing you — keep going";
+  };
+
+  recognition.onspeechend = () => {
+    log('onspeechend');
+  };
+
+  recognition.onsoundend = () => {
+    log('onsoundend');
+  };
+
+  recognition.onaudioend = () => {
+    log('onaudioend');
+  };
+
+  recognition.onnomatch = () => {
+    log('onnomatch — heard audio, no transcript match');
+    statusEl.textContent = "Heard sound but couldn't match it to words. Speak a bit louder/clearer.";
+  };
+
+  recognition.onerror = (e) => {
+    log(`onerror — ${e.error}`);
+    recognizing = false;
+    clearInterval(timerInterval);
+    recBtn.classList.remove('recording');
+
+    const messages = {
+      'not-allowed': 'Microphone access was blocked. Click the lock/site-info icon in the address bar, allow the microphone, then reload the page.',
+      'service-not-allowed': 'Microphone access was blocked by the browser. Check your site permissions and reload.',
+      'no-speech': 'No speech was picked up. Make sure your mic is selected correctly in your OS sound settings and try speaking louder.',
+      'audio-capture': 'No microphone was found. Plug one in or check your default recording device, then reload.',
+      'network': 'Connection to the speech service failed. This needs an active internet connection — check your network and try again.',
+      'aborted': 'Recording was interrupted.',
+    };
+    statusEl.textContent = `[error: ${e.error}] ` + (messages[e.error] || 'Try again.');
+  };
+
+  recognition.onend = () => {
+    log('onend fired');
+    if(recognizing){
+      statusEl.textContent = "Reconnecting mic…";
+      try{ recognition.start(); }catch(e){
+        log(`restart failed: ${e.message}`);
+        statusEl.textContent = `Restart failed: ${e.message}`;
+      }
+    }
+  };
+}
+
+recBtn.addEventListener('click', () => {
+  if(!recognizing) requestMicThenStart();
+  else stopRecording();
+});
+
+function requestMicThenStart(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    log('navigator.mediaDevices.getUserMedia unavailable');
+    statusEl.textContent = "This browser can't access the microphone (insecure context). Use https:// or http://localhost.";
+    return;
+  }
+  statusEl.textContent = "Requesting microphone access…";
+  log('requesting getUserMedia permission');
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then((stream) => {
+      log('getUserMedia granted, ' + stream.getAudioTracks().length + ' audio track(s)');
+      stream.getTracks().forEach(t => t.stop()); // release it, recognition.start() opens its own
+      startRecording();
+    })
+    .catch((err) => {
+      log(`getUserMedia failed: ${err.name} — ${err.message}`);
+      if(err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError'){
+        statusEl.textContent = 'Microphone access was denied. Click the lock/site-info icon in the address bar, allow the microphone, then reload.';
+      } else if(err.name === 'NotFoundError'){
+        statusEl.textContent = 'No microphone was found on this device.';
+      } else {
+        statusEl.textContent = `Couldn't access the microphone: ${err.message}`;
+      }
+    });
+}
+
+function startRecording(){
+  fullTranscript = "";
+  pauseGaps = [];
+  lastResultTime = null;
+  transcriptEl.innerHTML = "";
+  transcriptEl.classList.add('empty');
+  viewReportBtn.disabled = true;
+
+  recognizing = true;
+  startTime = Date.now();
+  recBtn.classList.add('recording');
+  statusEl.textContent = "Listening… speak naturally";
+  log('calling recognition.start()');
+
+  timerInterval = setInterval(()=>{
+    timerEl.textContent = formatTime(Date.now() - startTime);
+  }, 250);
+
+  try{
+    recognition.start();
+  }catch(e){
+    log(`recognition.start() threw: ${e.message}`);
+    statusEl.textContent = `Couldn't start recognition: ${e.message}. Try clicking the mic again.`;
+    recognizing = false;
+    recBtn.classList.remove('recording');
+    clearInterval(timerInterval);
+  }
+}
+
+function stopRecognitionOnly(){
+  recognizing = false;
+  clearInterval(timerInterval);
+  try{ recognition.stop(); }catch(e){}
+}
+
+function stopRecording(){
+  recognizing = false;
+  recBtn.classList.remove('recording');
+  statusEl.textContent = "Analyzing your speech…";
+  clearInterval(timerInterval);
+  try{ recognition.stop(); }catch(e){}
+  hasRecordedOnce = true;
+
+  setTimeout(() => {
+    statusEl.textContent = "Done — view your feedback below";
+    viewReportBtn.disabled = false;
+  }, 400);
+}
+
+viewReportBtn.addEventListener('click', () => {
+  if(!hasRecordedOnce) return;
+  generateReport();
+  goTo('report');
+});
+
+// ---------- page 3: report ----------
+function countFillers(text){
+  const lower = text.toLowerCase();
+  let total = 0;
+  const breakdown = {};
+  FILLERS.forEach(f=>{
+    const re = new RegExp(`\\b${f.replace(' ','\\s+')}\\b`, 'gi');
+    const matches = lower.match(re);
+    if(matches){
+      total += matches.length;
+      breakdown[f] = matches.length;
+    }
+  });
+  return {total, breakdown};
+}
+
+function generateReport(){
+  const durationMs = Date.now() - startTime;
+  const durationMin = Math.max(durationMs/60000, 0.1);
+  const words = fullTranscript.trim().split(/\s+/).filter(Boolean);
+  const wordCount = words.length;
+  const wpm = Math.round(wordCount / durationMin);
+
+  const fillerData = countFillers(fullTranscript);
+  const fillerRatio = wordCount > 0 ? fillerData.total / wordCount : 0;
+  const pauseCount = pauseGaps.length;
+
+  let paceScore;
+  if(wpm === 0) paceScore = 0;
+  else if(wpm >= 110 && wpm <= 160) paceScore = 100;
+  else {
+    const dist = wpm < 110 ? (110-wpm) : (wpm-160);
+    paceScore = Math.max(0, 100 - dist*1.8);
+  }
+
+  const fillerScore = Math.max(0, 100 - fillerRatio*100*6);
+  const pausePenalty = Math.max(0, pauseCount - 1) * 14;
+  const pauseScore = Math.max(0, 100 - pausePenalty);
+  const lengthFactor = Math.min(1, durationMs / 30000);
+  const rawConfidence = (paceScore*0.35 + fillerScore*0.35 + pauseScore*0.30);
+  const confidence = Math.round(rawConfidence * (0.5 + 0.5*lengthFactor));
+
+  document.getElementById('wpmVal').textContent = wordCount > 0 ? `${wpm} wpm` : '—';
+  const wpmHint = document.getElementById('wpmHint');
+  if(wordCount === 0){
+    wpmHint.textContent = "No speech captured"; wpmHint.className = "hint tag-bad";
+  } else if(wpm >= 110 && wpm <= 160){
+    wpmHint.textContent = "Ideal range"; wpmHint.className = "hint tag-good";
+  } else if(wpm < 110){
+    wpmHint.textContent = "A bit slow"; wpmHint.className = "hint tag-warn";
+  } else {
+    wpmHint.textContent = "Too fast"; wpmHint.className = "hint tag-bad";
+  }
+
+  document.getElementById('fillerVal').textContent = fillerData.total;
+  const fillerHint = document.getElementById('fillerHint');
+  const fillerPct = wordCount > 0 ? Math.round(fillerRatio*100) : 0;
+  fillerHint.textContent = `${fillerPct}% of words`;
+  fillerHint.className = "hint " + (fillerPct <= 3 ? "tag-good" : fillerPct <= 7 ? "tag-warn" : "tag-bad");
+
+  document.getElementById('pauseVal').textContent = pauseCount;
+  const pauseHint = document.getElementById('pauseHint');
+  pauseHint.textContent = pauseCount <= 1 ? "Smooth flow" : pauseCount <= 3 ? "A few hesitations" : "Frequent hesitations";
+  pauseHint.className = "hint " + (pauseCount <= 1 ? "tag-good" : pauseCount <= 3 ? "tag-warn" : "tag-bad");
+
+  document.getElementById('confNum').textContent = `${confidence} / 100`;
+  document.getElementById('confBar').style.width = `${confidence}%`;
+
+  const feedback = [];
+  if(wordCount === 0){
+    feedback.push({type:'bad', text:"No speech was captured — check your microphone permissions and try again."});
+  } else {
+    if(wpm < 110) feedback.push({type:'warn', text:`Your pace was ${wpm} wpm, a little slow. Aim for 110–160 words per minute to sound more energetic.`});
+    else if(wpm > 160) feedback.push({type:'bad', text:`Your pace was ${wpm} wpm, quite fast. Slow down slightly so your points land clearly.`});
+    else feedback.push({type:'good', text:`Great pacing at ${wpm} wpm — well within the ideal speaking range.`});
+
+    if(fillerData.total > 0){
+      const top = Object.entries(fillerData.breakdown).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([w,c])=>`"${w}" (${c}x)`).join(', ');
+      feedback.push({type: fillerPct<=3?'warn':'bad', text:`You used ${fillerData.total} filler word${fillerData.total>1?'s':''}, most often ${top}. Try pausing silently instead of filling the gap.`});
+    } else {
+      feedback.push({type:'good', text:"No filler words detected — very clean delivery."});
+    }
+
+    if(pauseCount > 3){
+      feedback.push({type:'bad', text:`You had ${pauseCount} long pauses. Practice organizing your thoughts with a quick structure (intro, 2 points, conclusion) before you start speaking.`});
+    } else if(pauseCount > 1){
+      feedback.push({type:'warn', text:`A couple of longer pauses crept in. A brief mental outline before you begin can smooth this out.`});
+    } else {
+      feedback.push({type:'good', text:"Minimal hesitation — your thoughts flowed continuously."});
+    }
+
+    if(durationMs < 20000){
+      feedback.push({type:'warn', text:"Your response was quite short. Try to speak for at least 60 seconds to develop your point fully."});
+    }
+  }
+
+  const list = document.getElementById('feedbackList');
+  list.innerHTML = "";
+  feedback.forEach(f=>{
+    const li = document.createElement('li');
+    const color = f.type === 'good' ? 'var(--good)' : f.type === 'warn' ? 'var(--warn)' : 'var(--bad)';
+    li.innerHTML = `<span class="bullet" style="background:${color}"></span><span>${f.text}</span>`;
+    list.appendChild(li);
+  });
+
+  document.getElementById('finalTranscript').innerHTML =
+    fullTranscript.trim() ? highlightFillers(fullTranscript.trim()) : "No transcript captured.";
+}
+
+// ---------- report page actions ----------
+document.getElementById('tryAgainBtn').addEventListener('click', () => {
+  pickTopic();
+  goTo('topic');
+});
+
+document.getElementById('retrySameBtn').addEventListener('click', () => {
+  recTopicText.textContent = currentTopic;
+  resetRecordingState();
+  goTo('record');
+});
+
+pickTopic();
+</script>
 </body>
 </html>
